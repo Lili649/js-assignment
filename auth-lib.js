@@ -26,106 +26,49 @@ function createUser(name, password) {
     return allUsers[allUsers.length-1];
 }
 
+function CheckBadData(value,array,name)
+{
+    if(!value)
+    {
+        throw Error('${name} is bad value');     
+    }
+    let indexValue = array.indexOf(value);
+    if(indexValue<0)
+    {
+        throw Error('This value of ${name} has already been deleted'); 
+    }
+    return indexValue;
+}
+
 // Удаляет пользователя user
 function deleteUser(user) {
-     //throw new Error('Message'); 
-    //!! - хорошее значение
-    //! - плохое значение
-    if(!user)
-    {
-        throw Error('Передано неверное значение');     
-    }
-
-    if(allUsers.indexOf(user)<0) //===-1
-    {
-        throw Error('Такой пользователь уже удален');    
-    }
-    allUsers.splice(allUsers.indexOf(user),1);
+    let userIndex = CheckBadData(user,allUsers,'user');
+    allUsers.splice(userIndex,1);
 }
 
 // Возвращает массив групп, к которым принадлежит пользователь user
 function userGroups(user) {
-    if(!user)
-    {
-        throw Error('Передано неверное значение');     
-    }
-    let index = allUsers.indexOf(user);
-    if(index<0) //===-1
-    {
-        throw Error('Такой пользователь уже удален');    
-    }
-    return allUsers[index].groups;
+    let userIndex = CheckBadData(user,allUsers,'user');
+    return allUsers[userIndex].groups;
 }
 
 // Добавляет пользователя user в группу group
 function addUserToGroup(user, group) {
-    //debugger;
-    //console.log(user);
-    //console.log(group);
-    if(!user)
-    {
-        throw Error('Передано неверное значение пользователя');     
-    }
-    
-    if(!group)
-    {
-        throw Error('Передано неверное значение группы');     
-    }
-    if(allGroups.indexOf(group)<0)
-    {
-        throw Error('Такой группы не существует');
-    }
-    let indexes = [];
-    if(Array.isArray(user))
-    {
-        //user.forEach(u=> allUsers[allUsers.indexOf(user)].groups.push(group));
-        user.forEach(u=>{
-            indexes.push(allUsers.indexOf(u));
-        if (indexes[indexes.length-1] < 0) //===-1
-        {
-            throw Error('Такого пользователя не существует');
-        }
-        }
-         );
-         indexes.forEach(index=>allUsers[index].groups.push(group));
-    }   
-    else
-    {
-        let index = allUsers.indexOf(user);
-        if (index < 0) //===-1
-        {
-            throw Error('Такого пользователя не существует');
-        }
-        allUsers[index].groups.push(group);
-    }
+    let userIndex = CheckBadData(user,allUsers,'user');    
+    let groupIndex = CheckBadData(group,allGroups,'group');
+    allUsers[userIndex].groups.push(group);
 }
 
 // Удаляет пользователя user из группы group. Должна бросить исключение, если пользователя user нет в группе group
 function removeUserFromGroup(user, group) {
-    if(!user)
+    let userIndex = CheckBadData(user,allUsers,'user');    
+    let groupIndex = CheckBadData(group,allGroups,'group');
+    groupIndex = allUsers[userIndex].groups.indexOf(group);
+    if(groupIndex<0)
     {
-        throw Error('Передано неверное значение пользователя');     
+        throw Error('User doesnt exist in group');
     }
-    let indexUser = allUsers.indexOf(user);
-    if(indexUser<0) //===-1
-    {
-        throw Error('Такой пользователь уже удален');    
-    }
-    if(!group)
-    {
-        throw Error('Передано неверное значение группы');     
-    }
-    let indexGroup = allGroups.indexOf(group);
-    if(indexGroup<0)
-    {
-        throw Error('Такой группы не существует');
-    }
-    indexGroup = allUsers[indexUser].groups.indexOf(group);
-    if(indexGroup<0)
-    {
-        throw Error('Такого пользователя нет в данной группе');
-    }
-    allUsers[indexUser].groups.splice(indexGroup,1);
+    allUsers[userIndex].groups.splice(groupIndex,1);
    
 }
 
@@ -142,16 +85,9 @@ function createRight(name) {
 
 // Удаляет право right
 function deleteRight(right) {
-    if(!right)
-    {
-        throw Error('Передано неверное значение права');     
-    }
-    if(allRights.indexOf(right)<0)
-    {
-        throw Error('Такого права не существует');
-    }
+    let rightIndex = CheckBadData(right,allRights,'right');    
     allGroups.forEach(group=>group.rights.indexOf(right)<0? {} : group.rights.splice(group.rights.indexOf(right),1));
-    allRights.splice(allRights.indexOf(right),1);
+    allRights.splice(rightIndex,1);
 }
 
 // Возвращает массив групп
@@ -167,16 +103,9 @@ function createGroup(name) {
 
 // Удаляет группу group
 function deleteGroup(group) {
-    if(!group)
-    {
-        throw Error('Передано неверное значение группы');     
-    }
-    if(allGroups.indexOf(group)<0)
-    {
-        throw Error('Такой группы не существует');
-    }
+    let groupIndex = CheckBadData(group,allGroups,'group');
     allUsers.forEach(user=>user.groups.indexOf(group)<0?{ } : user.groups.splice(user.groups.indexOf(group),1));
-    allGroups.splice(allGroups.indexOf(group),1);
+    allGroups.splice(groupIndex,1);
 }
 
 // Возвращает массив прав, которые принадлежат группе group
@@ -186,51 +115,21 @@ function groupRights(group) {
 
 // Добавляет право right к группе group
 function addRightToGroup(right,group) {
-    if(!right)
-    {
-        throw Error('Передано неверное значение права');     
-    }
-    if(allRights.indexOf(right)<0)
-    {
-        throw Error('Такого права не существует');
-    }
-    if(!group)
-    {
-        throw Error('Передано неверное значение группы');     
-    }
-    if(allGroups.indexOf(group)<0)
-    {
-        throw Error('Такой группы не существует');
-    }
-    allGroups[allGroups.indexOf(group)].rights.push(right);
+    let rightIndex = CheckBadData(right,allRights,'right');    
+    let groupIndex = CheckBadData(group,allGroups,'group');
+    allGroups[groupIndex].rights.push(right);
 }
 
 // Удаляет право right из группы group. Должна бросить исключение, если права right нет в группе group
 function removeRightFromGroup(right, group) {
-    if(!group)
+    let groupIndex = CheckBadData(group,allGroups,'group');
+    let rightIndex = CheckBadData(right,allRights,'right');    
+    rightIndex = allGroups[groupIndex].rights.indexOf(right);
+    if(rightIndex<0)
     {
-        throw Error('Передано неверное значение группы');     
+        throw Error('Right doesnt exist in group');
     }
-    let indexGroup = allGroups.indexOf(group);
-    if(indexGroup<0)
-    {
-        throw Error('Такой группы не существует');
-    }
-    if(!right)
-    {
-        throw Error('Передано неверное значение права');     
-    }
-    let indexRight = allRights.indexOf(right);
-    if(indexRight<0)
-    {
-        throw Error('Такого права не существует');
-    }
-    indexRight = allGroups[indexGroup].rights.indexOf(right);
-    if(indexRight<0)
-    {
-        throw Error('Такого права не существует в данной группе');
-    }
-    allGroups[indexGroup].rights.splice(indexRight,1);
+    allGroups[groupIndex].rights.splice(rightIndex,1);
 }
 
 function login(username, password) {}
