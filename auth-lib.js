@@ -30,12 +30,16 @@ function CheckBadData(value,array,name)
 {
     if(!value)
     {
-        throw Error('${name} is bad value');     
+        throw Error(name+" is bad value");     
+    }
+    if(array===undefined)
+    {
+        return;
     }
     let indexValue = array.indexOf(value);
     if(indexValue<0)
     {
-        throw Error('This value of ${name} has already been deleted'); 
+        throw Error("This value of "+name+" has already been deleted"); 
     }
     return indexValue;
 }
@@ -69,7 +73,7 @@ function removeUserFromGroup(user, group) {
         throw Error('User doesnt exist in group');
     }
     allUsers[userIndex].groups.splice(groupIndex,1);
-   
+
 }
 
 // Возвращает массив прав
@@ -85,8 +89,14 @@ function createRight(name) {
 
 // Удаляет право right
 function deleteRight(right) {
-    let rightIndex = CheckBadData(right,allRights,'right');    
-    allGroups.forEach(group=>group.rights.indexOf(right)<0? {} : group.rights.splice(group.rights.indexOf(right),1));
+    let rightIndex = CheckBadData(right,allRights,'right');  
+    for(i=0;i<allGroups.length;i++)
+    {
+        var index = allGroups[i].rights.indexOf(right);
+        if(index>=0)
+        allGroups[i].rights.splice(index,1);
+    }  
+    //allGroups.forEach(group=>group.rights.indexOf(right)<0? {} : group.rights.splice(group.rights.indexOf(right),1));
     allRights.splice(rightIndex,1);
 }
 
@@ -104,7 +114,13 @@ function createGroup(name) {
 // Удаляет группу group
 function deleteGroup(group) {
     let groupIndex = CheckBadData(group,allGroups,'group');
-    allUsers.forEach(user=>user.groups.indexOf(group)<0?{ } : user.groups.splice(user.groups.indexOf(group),1));
+    for(i=0;i<allUsers.length;i++)
+    {
+        var index = allUsers[i].groups.indexOf(group);
+        if(index>=0)
+            allUsers[i].groups.splice(index,1);
+    }  
+    //allUsers.forEach(user=>user.groups.indexOf(group)<0?{ } : user.groups.splice(user.groups.indexOf(group),1));
     allGroups.splice(groupIndex,1);
 }
 
@@ -131,11 +147,32 @@ function removeRightFromGroup(right, group) {
     }
     allGroups[groupIndex].rights.splice(rightIndex,1);
 }
+let sessionUser;
+function login(username, password) {
+    if(sessionUser)
+    return false;
+CheckBadData(username,undefined,'username');
+CheckBadData(password,undefined,'password');
+for(i=0;i<allUsers.length;i++)
+    if(allUsers[i].name===username && allUsers[i].password===password) {sessionUser = allUsers[i]; return true;}
+sessionUser = undefined;
+return false;
+}
 
-function login(username, password) {}
+function currentUser() {
+    return sessionUser;
+}
 
-function currentUser() {}
+function logout() {
+    sessionUser=undefined;
+}
 
-function logout() {}
-
-function isAuthorized(user, right) {}
+function isAuthorized(user, right) {
+    var indexUser = CheckBadData(user,allUsers,'user');
+    var indexRight = CheckBadData(right,allRights,'right');
+    let UserRight=false;
+   for(i=0;i<user.groups.length;i++)
+        if(user.groups[i].rights.indexOf(right)>=0)
+            return true;
+    return false;
+}
