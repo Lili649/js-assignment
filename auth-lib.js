@@ -26,7 +26,7 @@ function createUser(name, password) {
     return allUsers[allUsers.length - 1];
 }
 
-function CheckBadData(value, array, name) {
+function getIndexInArrayOrError(value, array, name) {
     if (!value) {
         throw Error(name + " is bad value");
     }
@@ -42,27 +42,27 @@ function CheckBadData(value, array, name) {
 
 // Удаляет пользователя user
 function deleteUser(user) {
-    let userIndex = CheckBadData(user, allUsers, 'user');
+    let userIndex = getIndexInArrayOrError(user, allUsers, 'user');
     allUsers.splice(userIndex, 1);
 }
 
 // Возвращает массив групп, к которым принадлежит пользователь user
 function userGroups(user) {
-    let userIndex = CheckBadData(user, allUsers, 'user');
+    let userIndex = getIndexInArrayOrError(user, allUsers, 'user');
     return allUsers[userIndex].groups;
 }
 
 // Добавляет пользователя user в группу group
 function addUserToGroup(user, group) {
-    let userIndex = CheckBadData(user, allUsers, 'user');
-    let groupIndex = CheckBadData(group, allGroups, 'group');
+    let userIndex = getIndexInArrayOrError(user, allUsers, 'user');
+    let groupIndex = getIndexInArrayOrError(group, allGroups, 'group');
     allUsers[userIndex].groups.push(group);
 }
 
 // Удаляет пользователя user из группы group. Должна бросить исключение, если пользователя user нет в группе group
 function removeUserFromGroup(user, group) {
-    let userIndex = CheckBadData(user, allUsers, 'user');
-    let groupIndex = CheckBadData(group, allGroups, 'group');
+    let userIndex = getIndexInArrayOrError(user, allUsers, 'user');
+    let groupIndex = getIndexInArrayOrError(group, allGroups, 'group');
     groupIndex = allUsers[userIndex].groups.indexOf(group);
     if (groupIndex < 0) {
         throw Error('User doesnt exist in group');
@@ -84,7 +84,7 @@ function createRight(name) {
 
 // Удаляет право right
 function deleteRight(right) {
-    let rightIndex = CheckBadData(right, allRights, 'right');
+    let rightIndex = getIndexInArrayOrError(right, allRights, 'right');
     for (i = 0; i < allGroups.length; i++) {
         var index = allGroups[i].rights.indexOf(right);
         if (index >= 0)
@@ -106,7 +106,7 @@ function createGroup(name) {
 
 // Удаляет группу group
 function deleteGroup(group) {
-    let groupIndex = CheckBadData(group, allGroups, 'group');
+    let groupIndex = getIndexInArrayOrError(group, allGroups, 'group');
     for (i = 0; i < allUsers.length; i++) {
         var index = allUsers[i].groups.indexOf(group);
         if (index >= 0)
@@ -122,15 +122,15 @@ function groupRights(group) {
 
 // Добавляет право right к группе group
 function addRightToGroup(right, group) {
-    let rightIndex = CheckBadData(right, allRights, 'right');
-    let groupIndex = CheckBadData(group, allGroups, 'group');
+    let rightIndex = getIndexInArrayOrError(right, allRights, 'right');
+    let groupIndex = getIndexInArrayOrError(group, allGroups, 'group');
     allGroups[groupIndex].rights.push(right);
 }
 
 // Удаляет право right из группы group. Должна бросить исключение, если права right нет в группе group
 function removeRightFromGroup(right, group) {
-    let groupIndex = CheckBadData(group, allGroups, 'group');
-    let rightIndex = CheckBadData(right, allRights, 'right');
+    let groupIndex = getIndexInArrayOrError(group, allGroups, 'group');
+    let rightIndex = getIndexInArrayOrError(right, allRights, 'right');
     rightIndex = allGroups[groupIndex].rights.indexOf(right);
     if (rightIndex < 0) {
         throw Error('Right doesnt exist in group');
@@ -142,10 +142,9 @@ function login(username, password) {
     if (!!sessionUsers.length)
         return false;
     for (i = 0; i < allUsers.length; i++)
-        if (allUsers[i].name === username && allUsers[i].password === password) 
-        { 
+        if (allUsers[i].name === username && allUsers[i].password === password) {
             sessionUsers.push(allUsers[i]);
-             return true;
+            return true;
         }
     return false;
 }
@@ -164,8 +163,8 @@ function logout() {
 }
 
 function isAuthorized(user, right) {
-    var indexUser = CheckBadData(user, allUsers, 'user');
-    var indexRight = CheckBadData(right, allRights, 'right');
+    var indexUser = getIndexInArrayOrError(user, allUsers, 'user');
+    var indexRight = getIndexInArrayOrError(right, allRights, 'right');
     for (i = 0; i < user.groups.length; i++)
         if (user.groups[i].rights.indexOf(right) >= 0)
             return true;
@@ -175,7 +174,7 @@ function isAuthorized(user, right) {
 //Доступ к функии loginAs должны иметь только члены привелигированной группы (например: администраторы и тестировщики). 
 //После вызова функии loginAs вызов функции logout должен прекратить эмуляцию (вместо закрытия текущей сессии).
 function loginAs(user) {
-    let userIndex = CheckBadData(user, allUsers, "user");
+    let userIndex = getIndexInArrayOrError(user, allUsers, "user");
     if (!currentUser()) throw Error("Can't loginAS: current user undefined")
     var loginAsRight = allRights[allRights.indexOf("loginAs")];
     if (isAuthorized(currentUser(), loginAsRight))
@@ -183,29 +182,29 @@ function loginAs(user) {
     else throw Error("User haven't got  rights for loginAs");
 }
 
-function securityWrapper(action,right)
-{
-    allListeners.forEach(listener => {
-            listener(currentUser(),action);
-    });
-if (!currentUser()) return undefined;
-    if (isAuthorized(currentUser(),right)) {
-        return action;
+function securityWrapper(action, right) {
+    const func = (...args) => {
+        if (!currentUser() || isAuthorized(currentUser(), right)) {
+            action(...args);
+            allListeners.forEach(listener => {
+                listener(currentUser(), action);
+            });
+        }
+        else console.log("Security error");
     }
-    return function(){};
+    return func;
 }
 
 allListeners = [];
-function addActionListener(listener)
-{
+function addActionListener(listener) {
     allListeners.push(listener);
 }
 
-addActionListener(function(user, action) { 
-    console.log("Пользователь " + user.name + " только что сделал " + action.name); 
+addActionListener(function (user, action) {
+    console.log("Пользователь " + user.name + " только что сделал " + action.name);
 });
-addActionListener(function(user, action) { 
-    alert("Пользователь " + user.name + " только что сделал " + action.name); 
+addActionListener(function (user, action) {
+    alert("Пользователь " + user.name + " только что сделал " + action.name);
 });
 
 //действия в системе
@@ -216,91 +215,91 @@ let rightU = createRight("update");
 let rightD = createRight("delete");
 
 
-let groupAdmins =  createGroup("admins");
+let groupAdmins = createGroup("admins");
 
-addRightToGroup(rightC,groupAdmins);
-addRightToGroup(rightR,groupAdmins);
-addRightToGroup(rightU,groupAdmins);
-addRightToGroup(rightD,groupAdmins);
+addRightToGroup(rightC, groupAdmins);
+addRightToGroup(rightR, groupAdmins);
+addRightToGroup(rightU, groupAdmins);
+addRightToGroup(rightD, groupAdmins);
 
 console.log(groupRights(groupAdmins));
 
-removeRightFromGroup(rightU,groupAdmins);
+removeRightFromGroup(rightU, groupAdmins);
 
 console.log(groupRights(groupAdmins));
 
 groupTesters = createGroup("testers");
 
-addRightToGroup(rightR,groupTesters);
-addRightToGroup(rightU,groupTesters);
-addRightToGroup(rightD,groupTesters);
+addRightToGroup(rightR, groupTesters);
+addRightToGroup(rightU, groupTesters);
+addRightToGroup(rightD, groupTesters);
 
 deleteRight(rightD);
 
 console.log(groupRights(groupAdmins));
 console.log(groupRights(groupTesters));
 
-let user1 = createUser("user1","password1");
+let user1 = createUser("user1", "password1");
 console.log(user1)
 let group1 = createGroup("group1");
 let group2 = createGroup("group2");
-addUserToGroup(user1,group1);
-addUserToGroup(user1,group2);
+addUserToGroup(user1, group1);
+addUserToGroup(user1, group2);
 console.log(user1);
-removeUserFromGroup(user1,group1);
+removeUserFromGroup(user1, group1);
 console.log(user1);
 deleteUser(user1);
 deleteGroup(group1);
 deleteGroup(group2);
 
 let rightLoginAs = createRight("loginAs");
-addRightToGroup(rightLoginAs,groupAdmins);
-addRightToGroup(rightLoginAs,groupTesters);
+addRightToGroup(rightLoginAs, groupAdmins);
+addRightToGroup(rightLoginAs, groupTesters);
 
 let groupGuest = createGroup("guests");
-addRightToGroup(rightR,groupGuest);
+addRightToGroup(rightR, groupGuest);
 
-let userAdmin = createUser("admin","admin")
-addUserToGroup(userAdmin,groupAdmins);
+let userAdmin = createUser("admin", "admin")
+addUserToGroup(userAdmin, groupAdmins);
 
-let userTestes = createUser("test","test")
-addUserToGroup(userTestes,groupTesters);
+let userTestes = createUser("test", "test")
+addUserToGroup(userTestes, groupTesters);
 
 let userGuest = createUser("guest");
-addUserToGroup(userGuest,groupGuest);
+addUserToGroup(userGuest, groupGuest);
 
 
 login("guest");
 console.log(currentUser()) //guest
 //loginAs(userTestes); //User haven't got  rights for loginAs
-console.log(login("admin","admin")) //false
+console.log(login("admin", "admin")) //false
 console.log(currentUser()) //guest
 logout();
 console.log(currentUser()) //undefined
 
 var counter = 0;
 function increaseCounter(amount) { counter += amount };
+let secureIncreaseCounter = securityWrapper(increaseCounter, rightC);
 
 
 
 login("test")
 console.log(currentUser()) //undefined
 
-login("test","test")
+login("test", "test")
 console.log(currentUser()) //test
 loginAs(userAdmin);
 console.log(currentUser()) //admin
-let secureIncreaseCounter = securityWrapper(increaseCounter, rightC);
 secureIncreaseCounter(1);
 console.log(counter);//1
-console.log(isAuthorized(currentUser(),rightC)); //true
-console.log(isAuthorized(currentUser(),rightU)); //false
+console.log(isAuthorized(currentUser(), rightC)); //true
+console.log(isAuthorized(currentUser(), rightU)); //false
 logout();
 
-console.log(currentUser()) 
-secureIncreaseCounter = securityWrapper(increaseCounter, rightC);
+console.log(currentUser())
+//secureIncreaseCounter = securityWrapper(increaseCounter, rightC);
 secureIncreaseCounter(1);
 console.log(counter);//1
-console.log(isAuthorized(currentUser(),rightU)); //true
+console.log(isAuthorized(currentUser(), rightU)); //true
 logout();
 //logout //Can't logout: current user undefined
