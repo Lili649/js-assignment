@@ -90,7 +90,6 @@ function deleteRight(right) {
         if (index >= 0)
             allGroups[i].rights.splice(index, 1);
     }
-    //allGroups.forEach(group=>group.rights.indexOf(right)<0? {} : group.rights.splice(group.rights.indexOf(right),1));
     allRights.splice(rightIndex, 1);
 }
 
@@ -113,7 +112,6 @@ function deleteGroup(group) {
         if (index >= 0)
             allUsers[i].groups.splice(index, 1);
     }
-    //allUsers.forEach(user=>user.groups.indexOf(group)<0?{ } : user.groups.splice(user.groups.indexOf(group),1));
     allGroups.splice(groupIndex, 1);
 }
 
@@ -306,10 +304,3 @@ console.log(counter);//1
 console.log(isAuthorized(currentUser(),rightU)); //true
 logout();
 //logout //Can't logout: current user undefined
-
-
-
-
-
-
-
